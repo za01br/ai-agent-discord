@@ -1,6 +1,12 @@
-# AI Agent/Discord Bot
+# AI Agent/Discord Bot (built with [Mastra AI](https://mastra.ai/))
 
-A Discord bot powered by an AI Agent built with [Mastra AI](https://mastra.ai/).
+- Allows users to ask questions via the `/agent` slash command.
+- The agent has the Mastra documentation in its context.
+- The agent answers questions and provides the source URL.
+
+#### Notes:
+
+- The documentation is not fetched in real-time or updated. It is saved in memory for demonstration purposes.
 
 ## Getting Started
 
