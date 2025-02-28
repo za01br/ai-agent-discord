@@ -42,7 +42,7 @@ async function handleAgentCommand(interaction: CommandInteraction) {
   try {
     // Immediately defer the reply to acknowledge the interaction and prevent timeout
     // This gives you up to 15 minutes to respond
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // Get the user's input from the command options
     const question = interaction.options.get("question")?.value as string;
@@ -51,7 +51,6 @@ async function handleAgentCommand(interaction: CommandInteraction) {
     const agent = await mastra.getAgent("mastraDocsHelper");
     const response = await agent.generate(question);
     const result: string = response.text;
-    console.log(result);
 
     // Check if the result is longer than Discord's 2000 character limit
     if (result.length <= 2000) {
@@ -93,57 +92,6 @@ async function handleAgentCommand(interaction: CommandInteraction) {
     }
   }
 }
-
-// async function handleAgentCommand(interaction: CommandInteraction) {
-//   try {
-//     // Get the user's input from the command options
-//     const question = interaction.options.get("question")?.value as string;
-
-//     const agent = await mastra.getAgent("mastraDocsHelper");
-//     const response = await agent.generate(question);
-//     const result: string = response.text;
-//     console.log(result);
-
-//     // Check if the result is longer than Discord's 2000 character limit
-//     if (result.length <= 2000) {
-//       // If it's under the limit, send the entire response at once
-//       await interaction.reply({
-//         content: result,
-//         flags: MessageFlags.Ephemeral, // Make the reply ephemeral (only visible to the user)
-//       });
-//     } else {
-//       // If it's over the limit, we need to split it into chunks
-
-//       // First, send initial reply with the first part of the message
-//       const chunkSize = 1950; // Using 1950 to leave some buffer space
-//       const chunks = [];
-
-//       for (let i = 0; i < result.length; i += chunkSize) {
-//         chunks.push(result.substring(i, i + chunkSize));
-//       }
-
-//       // Send the first chunk as the reply
-//       await interaction.reply({
-//         content: chunks[0],
-//         flags: MessageFlags.Ephemeral,
-//       });
-
-//       // Send the rest of the chunks as separate followups
-//       for (let i = 1; i < chunks.length; i++) {
-//         await interaction.followUp({
-//           content: chunks[i],
-//           flags: MessageFlags.Ephemeral,
-//         });
-//       }
-//     }
-//   } catch (error) {
-//     console.error("Error handling /agent command:", error);
-//     await interaction.reply({
-//       content: "An error occurred while processing your question.",
-//       flags: MessageFlags.Ephemeral,
-//     });
-//   }
-// }
 
 // Register slash command (run this once during bot setup)
 async function registerCommands() {

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@ai-sdk/azure": "^1.1.15",
+    "@ai-sdk/google": "^1.1.17",
     "discord.js": "^14.18.0"
   }
 }

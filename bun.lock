@@ -5,6 +5,7 @@
       "name": "discord-bot",
       "dependencies": {
         "@ai-sdk/azure": "^1.1.15",
+        "@ai-sdk/google": "^1.1.17",
         "discord.js": "^14.18.0",
       },
       "devDependencies": {
@@ -20,6 +21,8 @@
   },
   "packages": {
     "@ai-sdk/azure": ["@ai-sdk/azure@1.1.15", "", { "dependencies": { "@ai-sdk/openai": "1.1.15", "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-/2XMyl3+BP/zUxunmUKHAxyw3lYOGloEQ5J//yERys42CsMWj2jqut3Qred8ruyQKHsb19rk+HUWlCRg/WUuOA=="],
+
+    "@ai-sdk/google": ["@ai-sdk/google@1.1.17", "", { "dependencies": { "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-LFdRO+BMUagDplhZExOSr0cfmnoeV1s/gxpIsqt/AWCYnqY/dYGT74nhjbQ+rILeoE8vwnwUu/7OOZexhccm9A=="],
 
     "@ai-sdk/openai": ["@ai-sdk/openai@1.1.15", "", { "dependencies": { "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-irGQx5lMrYI9gub7Sy2ZHu49D3Icf7OtfOu3X8fVKMONOyi54RTKRNjVZTewkfRNE44psTbZDO8j8qmPirOTNQ=="],
 
