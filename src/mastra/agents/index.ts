@@ -1,8 +1,10 @@
-import dotenv from "dotenv";
-dotenv.config();
 import { createAzure } from "@ai-sdk/azure";
 import { Agent } from "@mastra/core/agent";
-import { weatherTool } from "../tools/weather-tool";
+import { readFile } from "fs/promises"; // Import readFile from fs/promises
+import path from "path"; // Import path module
+import { fileURLToPath } from "url";
+
+import { instructions } from "./instructions";
 
 const azure = createAzure({
   resourceName: process.env.AZURE_OPENAI_RESOURCE_NAME,
@@ -10,18 +12,23 @@ const azure = createAzure({
   apiVersion: process.env.AZURE_OPENAI_API_VERSION,
 });
 
-export const weatherAgent = new Agent({
-  name: "Weather Agent",
-  instructions: `You are a helpful weather assistant that provides accurate weather information.
- 
-Your only function is to help users get weather details for specific locations. When responding:
-- Always ask for a location if none is provided
-- Include relevant details like humidity, wind conditions, and precipitation
-- Keep responses concise but informative
- 
-Use the weatherTool to fetch current weather data.
+async function loadText() {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const filePath = path.join(__dirname, "docs.txt"); // Adjust filename and path
 
-Do not assist in any other type of inquiries, questons, or requests not related to providing weather information`,
+    const text = await readFile(filePath, "utf-8");
+    return text;
+  } catch (error) {
+    console.error("Error loading text file:", error);
+    return ""; // Return empty string or handle error appropriately.
+  }
+}
+
+export const mastraDocsHelper = new Agent({
+  name: "MastraDocsHelper",
+  instructions: `${instructions} ${await loadText()}`, // Await the result of loadText()
   model: azure("gpt-4o-mini"),
-  tools: { weatherTool },
+  // tools: { weatherTool },
 });
