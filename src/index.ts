@@ -5,6 +5,9 @@ import {
   MessageFlags,
   CommandInteraction,
 } from "discord.js";
+import { createLogger } from "@mastra/core/logger";
+import { Mastra } from "@mastra/core";
+import { weatherAgent } from "./mastra/agents";
 
 const client = new Client({
   intents: [
@@ -14,7 +17,14 @@ const client = new Client({
   ],
 });
 
-// When the client is ready, run this code
+const mastra = new Mastra({
+  agents: { weatherAgent },
+  logger: createLogger({
+    name: "CONSOLE",
+    level: "info",
+  }),
+});
+
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
@@ -33,12 +43,13 @@ async function handleAgentCommand(interaction: CommandInteraction) {
     // Get the user's input from the command options
     const question = interaction.options.get("question")?.value as string;
 
-    // Log the user's question
-    console.log("User asked:", question);
+    const agent = await mastra.getAgent("weatherAgent");
+    const response = await agent.generate(question);
+    const result: string = response.text;
 
     // Reply with "aha"
     await interaction.reply({
-      content: "aha",
+      content: result,
       flags: MessageFlags.Ephemeral, // Make the reply ephemeral (only visible to the user)
     });
   } catch (error) {
@@ -58,22 +69,25 @@ async function registerCommands() {
 
     console.log("Started refreshing application (/) commands.");
 
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID || ""), {
-      body: [
-        {
-          name: "agent",
-          description: "Ask the agent a question",
-          options: [
-            {
-              name: "question",
-              description: "The question you want to ask",
-              type: 3, // Type 3 corresponds to STRING
-              required: true,
-            },
-          ],
-        },
-      ],
-    });
+    await rest.put(
+      Routes.applicationCommands(process.env.APPLICATION_ID || ""),
+      {
+        body: [
+          {
+            name: "agent",
+            description: "Ask the agent a question",
+            options: [
+              {
+                name: "question",
+                description: "The question you want to ask",
+                type: 3, // Type 3 corresponds to STRING
+                required: true,
+              },
+            ],
+          },
+        ],
+      }
+    );
 
     console.log("Successfully reloaded application (/) commands.");
   } catch (error) {
