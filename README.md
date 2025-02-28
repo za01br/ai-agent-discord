@@ -17,7 +17,7 @@ Follow these steps to set up and run the bot:
 ### 2. Clone the project
 
 ```bash
-git clone <your-repository-url>
+gh repo clone za01br/ai-agent-discord
 cd discord-bot
 ```
 
