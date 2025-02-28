@@ -39,8 +39,8 @@ Rename `.env.placeholder` to `.env`.
 
 Open `.env`and replace the placeholder keys with your actual keys:
 
-DISCORD_TOKEN=Your_bot_token
-APPLICATION_ID=Your_bot_app_id
+DISCORD_TOKEN=Your_bot_token   
+APPLICATION_ID=Your_bot_app_id   
 GOOGLE_GENERATIVE_AI_API_KEY=Your_google_gemini_api_key
 
 ### 5. Run
