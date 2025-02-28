@@ -1,5 +1,5 @@
 # AI Agent/Discord Bot (built with [Mastra AI](https://mastra.ai/))
-![AI Agent Discord Bot Demo](https://s5.ezgif.com/tmp/ezgif-589fc338cbb1f0.gif)
+![AI Agent Discord Bot Demo](https://github.com/za01br/ai-agent-discord/blob/main/demo_discord_agent-ezgif.com-video-to-gif-converter.gif)
 - Allows users to ask questions via the `/agent` slash command.
 - The agent has the Mastra documentation in its context.
 - The agent answers questions and provides the source URL.
