@@ -1,9 +1,11 @@
+// Example of creating a Context Menu Option
 import {
   Client,
   Events,
   GatewayIntentBits,
   MessageFlags,
-  CommandInteraction,
+  ContextMenuCommandInteraction,
+  ApplicationCommandType,
 } from "discord.js";
 
 const client = new Client({
@@ -19,38 +21,44 @@ client.once(Events.ClientReady, (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
-// Handle slash command interactions
+// Handle context menu interactions
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (!interaction.isMessageContextMenuCommand()) return;
 
-  if (interaction.commandName === "agent") {
-    await handleAgentCommand(interaction);
+  if (interaction.commandName === "Create Issue") {
+    await handleIssueCommand(interaction);
   }
 });
 
-async function handleAgentCommand(interaction: CommandInteraction) {
+async function handleIssueCommand(interaction: ContextMenuCommandInteraction) {
   try {
-    // Get the user's input from the command options
-    const question = interaction.options.get("question")?.value as string;
+    // Access the message the user right-clicked
+    const targetMessage = await interaction.channel?.messages.fetch(
+      interaction.targetId
+    );
+    if (!targetMessage) return;
 
-    // Log the user's question
-    console.log("User asked:", question);
+    // Log the message content to console
+    console.log("Issue reported for message:");
+    console.log(`ID: ${targetMessage.id}`);
+    console.log(`Author: ${targetMessage.author.tag}`);
+    console.log(`Content: ${targetMessage.content}`);
 
-    // Reply with "aha"
+    // Confirm to the user
     await interaction.reply({
-      content: "aha",
-      flags: MessageFlags.Ephemeral, // Make the reply ephemeral (only visible to the user)
+      content: "Issue logged successfully!",
+      flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
-    console.error("Error handling /agent command:", error);
+    console.error("Error handling issue command:", error);
     await interaction.reply({
-      content: "An error occurred while processing your question.",
+      content: "An error occurred while processing your issue report.",
       flags: MessageFlags.Ephemeral,
     });
   }
 }
 
-// Register slash command (run this once during bot setup)
+// Register context menu command (run this once during bot setup)
 async function registerCommands() {
   try {
     const { REST, Routes } = await import("discord.js");
@@ -61,16 +69,8 @@ async function registerCommands() {
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID || ""), {
       body: [
         {
-          name: "agent",
-          description: "Ask the agent a question",
-          options: [
-            {
-              name: "question",
-              description: "The question you want to ask",
-              type: 3, // Type 3 corresponds to STRING
-              required: true,
-            },
-          ],
+          name: "Create Issue",
+          type: ApplicationCommandType.Message, // This makes it a message context menu command
         },
       ],
     });
