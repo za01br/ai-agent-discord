@@ -2,8 +2,9 @@ import {
   Client,
   Events,
   GatewayIntentBits,
-  MessageFlags,
   CommandInteraction,
+  ThreadAutoArchiveDuration,
+  ChannelType,
 } from "discord.js";
 import { createLogger } from "@mastra/core/logger";
 import { Mastra } from "@mastra/core";
@@ -40,14 +41,40 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 async function handleAgentCommand(interaction: CommandInteraction) {
   try {
-    // Immediately defer the reply to acknowledge the interaction and prevent timeout
-    // This gives you up to 15 minutes to respond
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
     // Get the user's input from the command options
     const question = interaction.options.get("question")?.value as string;
 
-    // Process the agent request (which might take time)
+    // First reply to acknowledge the command
+    await interaction.reply({
+      content: `Processing your question: "${question}"`,
+    });
+
+    // Fetch the reply message after sending it
+    const replyMessage = await interaction.fetchReply();
+
+    // Check if the interaction was in a text channel
+    if (
+      !interaction.channel ||
+      interaction.channel.type !== ChannelType.GuildText
+    ) {
+      await interaction.editReply(
+        "This command can only be used in a text channel."
+      );
+      return;
+    }
+
+    // Create a thread from the message
+    const thread = await interaction.channel.threads.create({
+      name: `Agent Query: ${question.substring(0, 50)}${question.length > 50 ? "..." : ""}`,
+      autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
+      startMessage: replyMessage.id,
+      reason: "Agent query thread",
+    });
+
+    // Send a processing message in the thread
+    await thread.send("Generating response...");
+
+    // Process the agent request
     const agent = await mastra.getAgent("mastraDocsHelper");
     const response = await agent.generate(question);
     const result: string = response.text;
@@ -55,9 +82,7 @@ async function handleAgentCommand(interaction: CommandInteraction) {
     // Check if the result is longer than Discord's 2000 character limit
     if (result.length <= 2000) {
       // If it's under the limit, send the entire response at once
-      await interaction.editReply({
-        content: result,
-      });
+      await thread.send(result);
     } else {
       // If it's over the limit, split into chunks and send each one
       const chunkSize = 1950; // Using 1950 to leave some buffer space
@@ -67,26 +92,30 @@ async function handleAgentCommand(interaction: CommandInteraction) {
         chunks.push(result.substring(i, i + chunkSize));
       }
 
-      // Send the first chunk as an edit to the original deferred reply
-      await interaction.editReply({
-        content: chunks[0],
-      });
-
-      // Send the rest of the chunks as separate followups
-      for (let i = 1; i < chunks.length; i++) {
-        await interaction.followUp({
-          content: chunks[i],
-          flags: MessageFlags.Ephemeral,
-        });
+      // Send all chunks as separate messages in the thread
+      for (const chunk of chunks) {
+        await thread.send(chunk);
       }
     }
+
+    // Update the original reply to indicate completion
+    await interaction.editReply({
+      content: `Your question has been answered in the thread.`,
+    });
   } catch (error) {
     console.error("Error handling /agent command:", error);
     try {
-      // If the interaction is still valid, respond with the error
-      await interaction.editReply({
-        content: "An error occurred while processing your question.",
-      });
+      // If the interaction hasn't been replied to yet
+      if (!interaction.replied) {
+        await interaction.reply({
+          content: "An error occurred while processing your question.",
+        });
+      } else {
+        // If already replied, edit the reply
+        await interaction.editReply({
+          content: "An error occurred while processing your question.",
+        });
+      }
     } catch (followupError) {
       console.error("Error sending error message:", followupError);
     }
