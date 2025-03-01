@@ -5,26 +5,36 @@ import {
   CommandInteraction,
   ThreadAutoArchiveDuration,
   ChannelType,
+  Message,
+  ThreadChannel,
 } from "discord.js";
 import { createLogger } from "@mastra/core/logger";
 import { Mastra } from "@mastra/core";
-import { mastraDocsHelper } from "./mastra/agents";
+// import { mastraDocsHelper } from "./mastra/agents";
+import { simpleAgent } from "./mastra/agents";
+
+// Store active threads and their original users
+const activeThreads = new Map<string, string>(); // Map<threadId, userId>
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
   ],
 });
 
 const mastra = new Mastra({
-  agents: { mastraDocsHelper },
+  agents: { simpleAgent },
   logger: createLogger({
     name: "CONSOLE",
     level: "info",
   }),
 });
+
+// const agent = await mastra.getAgent("mastraDocsHelper");
+const agent = await mastra.getAgent("simpleAgent");
 
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
@@ -39,8 +49,58 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+// Listen for messages in threads
+client.on(Events.MessageCreate, async (message: Message) => {
+  // If message is not in a thread or was sent by the bot, ignore it
+  if (!message.channel.isThread() || message.author.bot) return;
+
+  const threadId = message.channel.id;
+  const userId = message.author.id;
+
+  // Check if this thread is one we're tracking and if the message is from the original user
+  if (activeThreads.has(threadId) && activeThreads.get(threadId) === userId) {
+    console.log(
+      "Message received in threadId " + threadId + ", from userId: " + userId
+    );
+    // Process the agent request
+    const userReply = message.content;
+    const agentResponse = await agent.generate(userReply, {
+      threadId: threadId,
+      resourceId: userId,
+    });
+    const result: string = agentResponse.text;
+    await message.reply(result);
+  }
+});
+
+// Listen for thread deletion or archiving to clean up the Map
+client.on(Events.ThreadDelete, (thread: ThreadChannel) => {
+  if (activeThreads.has(thread.id)) {
+    activeThreads.delete(thread.id);
+    console.log(`Thread ${thread.id} deleted and removed from tracking.`);
+  }
+});
+
+client.on(
+  Events.ThreadUpdate,
+  (oldThread: ThreadChannel, newThread: ThreadChannel) => {
+    // If thread was archived, remove it from our tracking
+    if (
+      !oldThread.archived &&
+      newThread.archived &&
+      activeThreads.has(newThread.id)
+    ) {
+      activeThreads.delete(newThread.id);
+      console.log(`Thread ${newThread.id} archived and removed from tracking.`);
+    }
+  }
+);
+
 async function handleAgentCommand(interaction: CommandInteraction) {
   try {
+    const userDiscordId = interaction.user.id;
+    console.log(`User ${userDiscordId} initiated agent command`);
+
     // Get the user's input from the command options
     const question = interaction.options.get("question")?.value as string;
 
@@ -71,12 +131,20 @@ async function handleAgentCommand(interaction: CommandInteraction) {
       reason: "Agent query thread",
     });
 
+    // Store the thread ID and user ID in our tracking map
+    activeThreads.set(thread.id, interaction.user.id);
+    console.log(
+      `Thread ${thread.id} created and tracked for user ${interaction.user.id}`
+    );
+
     // Send a processing message in the thread
     await thread.send("Generating response...");
 
     // Process the agent request
-    const agent = await mastra.getAgent("mastraDocsHelper");
-    const response = await agent.generate(question);
+    const response = await agent.generate(question, {
+      threadId: thread.id,
+      resourceId: interaction.user.id,
+    });
     const result: string = response.text;
 
     // Check if the result is longer than Discord's 2000 character limit
@@ -156,8 +224,39 @@ async function registerCommands() {
   }
 }
 
+// Clean up stale threads function (optional, can be called periodically)
+async function cleanupStaleThreads() {
+  for (const [threadId, userId] of activeThreads.entries()) {
+    try {
+      // Try to fetch the thread - will throw an error if it no longer exists
+      const thread = (await client.channels.fetch(threadId)) as ThreadChannel;
+
+      // If thread exists but is archived, remove it from our tracking
+      if (thread.archived) {
+        activeThreads.delete(threadId);
+        console.log(
+          `Cleaned up archived thread ${threadId} during maintenance`
+        );
+      }
+    } catch (error) {
+      // Thread likely no longer exists
+      activeThreads.delete(threadId);
+      console.log(
+        `Cleaned up non-existent thread ${threadId} during maintenance`
+      );
+    }
+  }
+
+  console.log(
+    `Cleanup complete. Currently tracking ${activeThreads.size} active threads.`
+  );
+}
+
 // Call this once to register commands
 registerCommands();
+
+// Optional: Set up periodic cleanup every 12 hours
+// setInterval(cleanupStaleThreads, 12 * 60 * 60 * 1000);
 
 // Login to Discord with your client's token
 client.login(process.env.DISCORD_TOKEN);

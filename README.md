@@ -1,5 +1,7 @@
 # AI Agent/Discord Bot (built with [Mastra AI](https://mastra.ai/))
+
 ![AI Agent Discord Bot Demo](https://github.com/za01br/ai-agent-discord/blob/main/demo_discord_agent-ezgif.com-video-to-gif-converter.gif)
+
 - Allows users to ask questions via the `/agent` slash command.
 - The agent has the Mastra documentation in its context.
 - The agent answers questions and provides the source URL.
@@ -39,8 +41,8 @@ Rename `.env.placeholder` to `.env`.
 
 Open `.env`and replace the placeholder keys with your actual keys:
 
-DISCORD_TOKEN=Your_bot_token   
-APPLICATION_ID=Your_bot_app_id   
+DISCORD_TOKEN=Your_bot_token  
+APPLICATION_ID=Your_bot_app_id  
 GOOGLE_GENERATIVE_AI_API_KEY=Your_google_gemini_api_key
 
 ### 5. Run
@@ -48,3 +50,10 @@ GOOGLE_GENERATIVE_AI_API_KEY=Your_google_gemini_api_key
 ```bash
 bun run dev
 ```
+
+MVP:
+
+1. Enable Memory, usign Discord User Id as resource_id
+2. Enable Chat with Agent (listen to reply on the same thread, by the same user who initiated the request)
+3. Fetch docs every X hours
+4. Initial fecth + vector discord messages, then once per day, last 24 hrs.

@@ -26,3 +26,9 @@ export const mastraDocsHelper = new Agent({
   model: google("gemini-2.0-flash-001"),
   tools: { createGithubIssue },
 });
+
+export const simpleAgent = new Agent({
+  name: "simpleAgent",
+  instructions: `You are a helpful assistant`,
+  model: google("gemini-2.0-flash-001"),
+});
