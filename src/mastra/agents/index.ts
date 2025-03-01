@@ -4,6 +4,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { instructions } from "./instructions";
+import { createGithubIssue } from "../tools/createGithubIssue";
 
 async function loadText() {
   try {
@@ -23,4 +24,5 @@ export const mastraDocsHelper = new Agent({
   name: "MastraDocsHelper",
   instructions: `${instructions} ${await loadText()}`, // Await the result of loadText()
   model: google("gemini-2.0-flash-001"),
+  tools: { createGithubIssue },
 });
